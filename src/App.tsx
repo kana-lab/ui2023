@@ -1,4 +1,9 @@
-import React, {Dispatch, MutableRefObject, RefObject, SetStateAction, useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
+import {ReactComponent as HelpMark} from "./assets/help.svg";
+import {ReactComponent as UpMark} from "./assets/up.svg";
+import {ReactComponent as DownMark} from "./assets/down.svg";
+import {ReactComponent as RightMark} from "./assets/right.svg";
+import {ReactComponent as LeftMark} from "./assets/left.svg";
 import './App.css';
 
 const App = () => {
@@ -30,12 +35,52 @@ const App = () => {
 function GarmentCanvasWait() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
 
+    let [garmentCanvas, setGarmentCanvas] = useState<GarmentCanvas | null>(null)
+    const [helpEnabled, setHelpEnabled] = useState(false)
+
     useEffect(() => {
-        new GarmentCanvas(canvasRef.current!);
+        setGarmentCanvas(new GarmentCanvas(canvasRef.current!))
     }, [])
 
-    return <canvas ref={canvasRef} width={window.innerWidth}
-                   height={window.innerHeight * 0.95} className="z-10"/>
+    // Reactの仕組み全然わからん
+    if (garmentCanvas !== null)
+        garmentCanvas.showHelp(helpEnabled);
+
+    const move = (direction: number) => {
+        if (garmentCanvas !== null)
+            garmentCanvas.move(direction)
+    }
+
+    return (<div>
+        <canvas ref={canvasRef} width={window.innerWidth}
+                height={window.innerHeight * 0.95} className="z-10"/>
+        <button
+            className="absolute top-10 left-10"
+            onMouseDown={() => setHelpEnabled(true)}
+            onMouseUp={() => setHelpEnabled(false)}
+            onMouseLeave={() => setHelpEnabled(false)}
+        >
+            <HelpMark className="fill-purple-700 w-20 h-20"/>
+        </button>
+        <div className="absolute bottom-20 right-20 fill-indigo-500 w-60 h-60">
+            <button className="absolute top-3 left-20 rounded-full hover:fill-purple-700"
+                    onClick={() => move(0)}>
+                <UpMark className="w-20 h-20"/>
+            </button>
+            <button className="absolute top-20 left-3 rounded-full hover:fill-purple-700"
+                    onClick={() => move(3)}>
+                <LeftMark className="w-20 h-20"/>
+            </button>
+            <button className="absolute bottom-3 left-20 rounded-full hover:fill-purple-700"
+                    onClick={() => move(1)}>
+                <DownMark className="w-20 h-20"/>
+            </button>
+            <button className="absolute top-20 right-3 rounded-full hover:fill-purple-700"
+                    onClick={() => move(2)}>
+                <RightMark className="w-20 h-20"/>
+            </button>
+        </div>
+    </div>)
 }
 
 type Vector = [number, number]
@@ -43,7 +88,8 @@ type Vector = [number, number]
 enum GarmentPart {
     ShoulderLeft, ShoulderRight, WaistLeft, WaistRight,
     FlareLeft, FlareRight, SleeveLeft, SleeveRight, Hem,
-    SleeveLeftInner, SleeveRightInner, ShoulderLeftInner, ShoulderRightInner,
+    SleeveLeftInner, SleeveRightInner, ShoulderLeftInner,
+    ShoulderRightInner, SleeveCenterLeft, SleeveCenterRight,
 }
 
 class GarmentCanvas {
@@ -130,6 +176,13 @@ class GarmentCanvas {
         const sleeveRightInner = [sleeveRight[0] + normal[0], sleeveRight[1] + normal[1]]
         const shoulderRightInner = [origX + shoulderHalf + normal[0], origY + normal[1]]
 
+        const sleeveCenterLeft = [
+            origX - shoulderHalf - sleeveX / 2 - normal[0], origY + sleeveY / 2 + normal[1]
+        ]
+        const sleeveCenterRight = [
+            origX + shoulderHalf + sleeveX / 2 + normal[0], origY + sleeveY / 2 + normal[1]
+        ]
+
         return {
             [GarmentPart.ShoulderLeft]: shoulderLeft as Vector,
             [GarmentPart.ShoulderRight]: shoulderRight as Vector,
@@ -144,6 +197,8 @@ class GarmentCanvas {
             [GarmentPart.SleeveRightInner]: sleeveRightInner as Vector,
             [GarmentPart.ShoulderRightInner]: shoulderRightInner as Vector,
             [GarmentPart.Hem]: [origX, origY + h * this.hemLength],
+            [GarmentPart.SleeveCenterLeft]: sleeveCenterLeft as Vector,
+            [GarmentPart.SleeveCenterRight]: sleeveCenterRight as Vector,
         }
     }
 
@@ -151,6 +206,8 @@ class GarmentCanvas {
         this.context.clearRect(0, 0, this.width, this.height)
 
         const vertices = this._getVertices()
+
+        this.context.lineWidth = 2
 
         // render body part
         const shoulderLeft = vertices[GarmentPart.ShoulderLeft]
@@ -219,25 +276,25 @@ class GarmentCanvas {
     transformPart(garmentPart: GarmentPart, mouseDelta: Vector) {
         if (garmentPart === GarmentPart.ShoulderLeft) {
             this.shoulderLength += -mouseDelta[0]
-            this.shoulderLength = Math.min(this.shoulderLength, 5)
+            this.shoulderLength = Math.max(this.shoulderLength, 0.01)
         } else if (garmentPart === GarmentPart.ShoulderRight) {
             this.shoulderLength += mouseDelta[0]
-            this.shoulderLength = Math.min(this.shoulderLength, 5)
+            this.shoulderLength = Math.max(this.shoulderLength, 0.01)
         } else if (garmentPart === GarmentPart.WaistLeft) {
             this.waistLength += -mouseDelta[0]
-            this.waistLength = Math.min(this.waistLength, 5)
+            this.waistLength = Math.max(this.waistLength, 0.01)
         } else if (garmentPart === GarmentPart.WaistRight) {
             this.waistLength += mouseDelta[0]
-            this.waistLength = Math.min(this.waistLength, 5)
+            this.waistLength = Math.max(this.waistLength, 0.01)
         } else if (garmentPart === GarmentPart.FlareLeft) {
             this.flareLength += -mouseDelta[0]
-            this.flareLength = Math.min(this.flareLength, 5)
+            this.flareLength = Math.max(this.flareLength, 0.01)
         } else if (garmentPart === GarmentPart.FlareRight) {
             this.flareLength += mouseDelta[0]
-            this.flareLength = Math.min(this.flareLength, 5)
+            this.flareLength = Math.max(this.flareLength, 0.01)
         } else if (garmentPart === GarmentPart.Hem) {
             this.hemLength += mouseDelta[1]
-            this.hemLength = Math.min(this.hemLength, 5)
+            this.hemLength = Math.max(this.hemLength, 0.01)
         } else if (garmentPart === GarmentPart.SleeveLeft
             || garmentPart === GarmentPart.SleeveLeftInner) {
             this.sleeveVector[0] += -mouseDelta[0]
@@ -246,10 +303,59 @@ class GarmentCanvas {
             || garmentPart === GarmentPart.SleeveRightInner) {
             this.sleeveVector[0] += mouseDelta[0]
             this.sleeveVector[1] += mouseDelta[1]
+        } else if (garmentPart === GarmentPart.SleeveCenterLeft) {
+            const scale1 = 1 / (this.sleeveVector[0] ** 2 + this.sleeveVector[1] ** 2) ** 0.5
+            const scale2 = mouseDelta[0] * this.sleeveVector[1] + mouseDelta[1] * this.sleeveVector[0]
+            this.sleeveThickness += scale1 * scale2
+        } else if (garmentPart === GarmentPart.SleeveCenterRight) {
+            const scale1 = 1 / (this.sleeveVector[0] ** 2 + this.sleeveVector[1] ** 2) ** 0.5
+            const scale2 = -mouseDelta[0] * this.sleeveVector[1] + mouseDelta[1] * this.sleeveVector[0]
+            this.sleeveThickness += scale1 * scale2
         } else {
             console.log("Unknown part", typeof garmentPart)
         }
 
+        this.renderGarment()
+    }
+
+    showHelp(enabled: boolean) {
+        if (!enabled) {
+            this.renderGarment()
+            return
+        }
+
+        const threshold = 0.05
+        const vertices = this._getVertices()
+
+        this.context.globalAlpha = 0.2
+        for (const [garmentPart_, [x, y]] of Object.entries(vertices)) {
+            const garmentPart = parseInt(garmentPart_) as GarmentPart
+            if (garmentPart === GarmentPart.ShoulderLeftInner
+                || garmentPart === GarmentPart.ShoulderRightInner
+                || garmentPart === GarmentPart.SleeveLeftInner
+                || garmentPart === GarmentPart.SleeveRightInner)
+                continue;
+
+            this.context.beginPath()
+            this.context.arc(x, y, this.height * threshold, 0, Math.PI * 2)
+            this.context.fillStyle = "yellow"
+            this.context.fill()
+        }
+        this.context.globalAlpha = 1.0
+    }
+
+    // 0: up, 1: down, 2: right, 3: left
+    move(direction: number) {
+        const interval = 0.005
+        if (direction === 0) {
+            this.garmentOrigin[1] -= interval
+        } else if (direction === 1) {
+            this.garmentOrigin[1] += interval
+        } else if (direction === 2) {
+            this.garmentOrigin[0] += interval
+        } else if (direction === 3) {
+            this.garmentOrigin[0] -= interval
+        }
         this.renderGarment()
     }
 }
