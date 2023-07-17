@@ -4,14 +4,13 @@ import {ReactComponent as UpMark} from "./assets/up.svg";
 import {ReactComponent as DownMark} from "./assets/down.svg";
 import {ReactComponent as RightMark} from "./assets/right.svg";
 import {ReactComponent as LeftMark} from "./assets/left.svg";
-import './App.css';
 
 const App = () => {
     const [imgNum, setImgNum] = useState(0)
 
     return (
         <div className="App h-full w-full absolute top-0 flex flex-col justify-center items-center">
-            <img src={'body' + imgNum + '.png'} alt="Failed to load images." className="h-[95%]"/>
+            <img src={'body' + imgNum + '.png'} alt="Failed to load images." className="h-[90%]"/>
             <div className="h-[5%] w-full flex items-center justify-center">
                 {
                     Array.from(Array(5).keys()).map((_, idx) =>
@@ -25,7 +24,7 @@ const App = () => {
                     )
                 }
             </div>
-            <div className="absolute h-[95%] w-full top-0">
+            <div className="absolute h-[90%] w-full top-0">
                 <GarmentCanvasWait/>
             </div>
         </div>
@@ -55,29 +54,31 @@ function GarmentCanvasWait() {
         <canvas ref={canvasRef} width={window.innerWidth}
                 height={window.innerHeight * 0.95} className="z-10"/>
         <button
-            className="absolute top-10 left-10"
+            className="absolute top-[5%] left-[5%]"
             onMouseDown={() => setHelpEnabled(true)}
             onMouseUp={() => setHelpEnabled(false)}
             onMouseLeave={() => setHelpEnabled(false)}
+            onTouchStart={() => setHelpEnabled(true)}
+            onTouchEnd={() => setHelpEnabled(false)}
         >
             <HelpMark className="fill-purple-700 w-20 h-20"/>
         </button>
-        <div className="absolute bottom-20 right-20 fill-indigo-500 w-60 h-60">
-            <button className="absolute top-3 left-20 rounded-full hover:fill-purple-700"
+        <div className="absolute bottom-[5%] right-[5%] md:right-[10%] fill-indigo-500 w-[20vh] h-[20vh]">
+            <button className="absolute top-3 left-[33.3%] rounded-full w-[33.3%] h-[33.3%] hover:fill-purple-700"
                     onClick={() => move(0)}>
-                <UpMark className="w-20 h-20"/>
+                <UpMark className="w-full h-full"/>
             </button>
-            <button className="absolute top-20 left-3 rounded-full hover:fill-purple-700"
+            <button className="absolute top-[33.3%] left-3 rounded-full w-[33.3%] h-[33.3%] hover:fill-purple-700"
                     onClick={() => move(3)}>
-                <LeftMark className="w-20 h-20"/>
+                <LeftMark className="w-full h-full"/>
             </button>
-            <button className="absolute bottom-3 left-20 rounded-full hover:fill-purple-700"
+            <button className="absolute bottom-3 left-[33.3%] rounded-full w-[33.3%] h-[33.3%] hover:fill-purple-700"
                     onClick={() => move(1)}>
-                <DownMark className="w-20 h-20"/>
+                <DownMark className="w-full h-full"/>
             </button>
-            <button className="absolute top-20 right-3 rounded-full hover:fill-purple-700"
+            <button className="absolute top-[33.3%] right-3 rounded-full w-[33.3%] h-[33.3%] hover:fill-purple-700"
                     onClick={() => move(2)}>
-                <RightMark className="w-20 h-20"/>
+                <RightMark className="w-full h-full"/>
             </button>
         </div>
     </div>)
@@ -124,7 +125,7 @@ class GarmentCanvas {
 
         canvas.addEventListener('mousedown', (e) => {
             if (mouseOrigin === null) {
-                const mousePos: Vector = [e.x, e.y]
+                const mousePos: Vector = [e.clientX, e.clientY]
                 garmentPart = this.detectPart(mousePos)
                 if (garmentPart === null) return;
 
@@ -142,10 +143,10 @@ class GarmentCanvas {
             if (mouseOrigin === null) return;
 
             const mouseDelta: Vector = [
-                (e.x - mouseOrigin[0]) / this.width, (e.y - mouseOrigin[1]) / this.height
+                (e.clientX - mouseOrigin[0]) / this.width, (e.clientY - mouseOrigin[1]) / this.height
             ]
             this.transformPart(garmentPart!, mouseDelta)
-            mouseOrigin = [e.x, e.y]
+            mouseOrigin = [e.clientX, e.clientY]
         })
     }
 
