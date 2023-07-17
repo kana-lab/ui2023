@@ -58,7 +58,7 @@ function GarmentCanvasWait() {
             className="absolute top-10 left-10"
             onMouseDown={() => setHelpEnabled(true)}
             onMouseUp={() => setHelpEnabled(false)}
-            onMouseLeave={() => setHelpEnabled(false)}
+            // onMouseLeave={() => setHelpEnabled(false)}
         >
             <HelpMark className="fill-purple-700 w-20 h-20"/>
         </button>
